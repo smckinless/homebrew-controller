@@ -1,12 +1,15 @@
 from django.db import models
 
-class Brew(models.Model):
-    name = models.CharField(max_length=256)
-
 class BrewStep(models.Model):
     name = models.CharField(max_length=256)
 
+class Brew(models.Model):
+    name = models.CharField(max_length=256)
+    current_brew_step = models.ForeignKey(BrewStep, null=True)
+    is_active = models.BooleanField(default=False)
+
 class Probe(models.Model):
+    id = models.CharField(max_length=256, primary_key=True)
     location = models.CharField(max_length=256)
 
 class TempReading(models.Model):
