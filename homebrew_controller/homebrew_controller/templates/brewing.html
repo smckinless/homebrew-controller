@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.js"></script>
+    <title>{{ current_brew }} Dashboard</title>
+    <script type="text/javascript" src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+</head>
+<body>
+<div>This is the current step in the brewing process: {{ current_brew.current_brew_step.name }}.</div>
+<div id="chartContainer" style="height: 300px; width: 100%;">
+	</div>
+<script type="text/javascript">
+	$(document).ready(function () {
+	    // create date from years, hours, minutes, seconds passed in
+	    function newDateString(year, month, hours, minutes, seconds) {
+            return new Date(year, month, hours, minutes, seconds);
+        }
+
+        var data = [{% for temp_reading in temp_readings %}
+        {x: newDateString({{temp_reading.timestamp.year}}, {{temp_reading.timestamp.month}} - 1, {{temp_reading.timestamp.hour}}, {{temp_reading.timestamp.minute}}, {{temp_reading.timestamp.second}}),
+        y: {{temp_reading.temperature}}},
+        {% endfor %}];
+
+		// dataPoints
+		var dataPoints1 = data;
+
+        // Create new chart with given data points for chart
+		function newChart(dataPoints) {
+		    var chart = new CanvasJS.Chart("chartContainer",{
+                zoomEnabled: true,
+                title: {
+                    text: "Temperature Over Time for " + "{{current_brew.current_brew_step.name}}"
+                },
+                toolTip: {
+                    shared: true
+
+                },
+                legend: {
+                    verticalAlign: "top",
+                    horizontalAlign: "center",
+                                    fontSize: 14,
+                    fontWeight: "bold",
+                    fontFamily: "calibri",
+                    fontColor: "dimGrey"
+                },
+                axisX: {
+                    title: "chart updates every 10 secs"
+                },
+                axisY:{
+                    suffix: '°',
+                    includeZero: false
+                },
+                data: [{
+                    // dataSeries1
+                    type: "line",
+                    showInLegend: true,
+                    name: "Temperature over Time",
+                    dataPoints: dataPoints
+                }
+                ],
+              legend:{
+                cursor:"pointer",
+                itemclick : function(e) {
+                  if (typeof(e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+                    e.dataSeries.visible = false;
+                  }
+                  else {
+                    e.dataSeries.visible = true;
+                  }
+                  chart.render();
+                }
+              }
+            });
+            chart.render();
+        }
+        // Add in initial cart rendering
+        newChart(dataPoints1);
+
+		var updateInterval = 10000;
+
+		var updateChart = function () {
+            $.ajax({
+                type: "GET",
+                url: '/get/temp_data/',
+                data: {"brew": {{current_brew.id}}, "brew_step": {{current_brew.current_brew_step.id}}},
+                success: function(response) {
+                    var dataPoints = [];
+                    for (var i = 0; i < response.data.length; i++) {
+                        dataPoints.push({x: new Date(response.data[i].x), y: response.data[i].y});
+                    }
+                    newChart(dataPoints);
+                },
+                error: function(error) {
+                    console.log(error);
+                }
+            });
+
+
+
+		};
+
+		// update chart after specified interval
+		setInterval(function(){updateChart()}, updateInterval);
+	});
+	</script>
+</body>
+</html>

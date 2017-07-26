@@ -15,10 +15,16 @@ Including another URLconf
 """
 from django.conf.urls import url, include
 from django.contrib import admin
-from api_views import TempData
+from api_views import TempData, SetCurrentBrewStep, GetAllBrewsAPI, GetAllTempData
+from views import IndexView, BrewingView
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
-    url(r'^temp_data/$', TempData.as_view())
+    url(r'^temp_data/$', TempData.as_view()),
+    url(r'^$', IndexView.as_view()),
+    url(r'^set_step/$', SetCurrentBrewStep.as_view()),
+    url(r'^brew/$', BrewingView.as_view()),
+    url(r'^get/all/brews/$', GetAllBrewsAPI.as_view()),
+    url(r'^get/temp_data/$', GetAllTempData.as_view()),
 ]
