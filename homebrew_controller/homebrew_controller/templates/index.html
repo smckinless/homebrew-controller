@@ -1,13 +1,13 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends 'master.html' %}
+
 <head>
     <meta charset="UTF-8">
     <title>Homebrew Controller</title>
 </head>
-<body>
-<form action="/add_brew">
+{% block content %}
+<form method="POST">
+    {% csrf_token %}
     <input name="brew_name" type="text" placeholder="Brew Name">
     <button type="submit">Create New Brew</button>
 </form>
-</body>
-</html>
+{% endblock %}

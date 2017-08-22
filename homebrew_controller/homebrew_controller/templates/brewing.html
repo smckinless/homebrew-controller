@@ -1,15 +1,15 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.js"></script>
+{% extends 'master.html' %}
+{% block head %}
+{{ block.super }}
     <title>{{ current_brew }} Dashboard</title>
-    <script type="text/javascript" src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
-</head>
-<body>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.6.0/Chart.js"></script>
+{% endblock %}
+{% block content %}
 <div>This is the current step in the brewing process: {{ current_brew.current_brew_step.name }}.</div>
-<div id="chartContainer" style="height: 300px; width: 100%;">
-	</div>
+{% for probe in probes %}
+<canvas id="chartContainer-{{probe.id}}" style="height: 300px; width: 100%;">
+	</canvas>
+{% endfor %}
 <script type="text/javascript">
 	$(document).ready(function () {
 	    // create date from years, hours, minutes, seconds passed in
@@ -17,92 +17,85 @@
             return new Date(year, month, hours, minutes, seconds);
         }
 
-        var data = [{% for temp_reading in temp_readings %}
-        {x: newDateString({{temp_reading.timestamp.year}}, {{temp_reading.timestamp.month}} - 1, {{temp_reading.timestamp.hour}}, {{temp_reading.timestamp.minute}}, {{temp_reading.timestamp.second}}),
-        y: {{temp_reading.temperature}}},
-        {% endfor %}];
 
-		// dataPoints
-		var dataPoints1 = data;
+        var temp_readings = {{temp_readings|safe}};
+
 
         // Create new chart with given data points for chart
-		function newChart(dataPoints) {
-		    var chart = new CanvasJS.Chart("chartContainer",{
-                zoomEnabled: true,
-                title: {
-                    text: "Temperature Over Time for " + "{{current_brew.current_brew_step.name}}"
-                },
-                toolTip: {
-                    shared: true
-
-                },
-                legend: {
-                    verticalAlign: "top",
-                    horizontalAlign: "center",
-                                    fontSize: 14,
-                    fontWeight: "bold",
-                    fontFamily: "calibri",
-                    fontColor: "dimGrey"
-                },
-                axisX: {
-                    title: "chart updates every 10 secs"
-                },
-                axisY:{
-                    suffix: '°',
-                    includeZero: false
-                },
-                data: [{
-                    // dataSeries1
-                    type: "line",
-                    showInLegend: true,
-                    name: "Temperature over Time",
-                    dataPoints: dataPoints
+		function newChart(dataPoints, probe) {
+		    var ctx = document.getElementById("chartContainer-" + probe).getContext('2d');
+		    var labels = [];
+		    for (var i = 0; i < dataPoints.length; i++) {
+                var date = dataPoints[i].x;
+                var human_date = date.toDateString();
+                var hours = date.getHours();
+                var minutes = date.getMinutes();
+                if (minutes.toString().length < 2) {
+                    minutes = '0' + minutes;
                 }
-                ],
-              legend:{
-                cursor:"pointer",
-                itemclick : function(e) {
-                  if (typeof(e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
-                    e.dataSeries.visible = false;
-                  }
-                  else {
-                    e.dataSeries.visible = true;
-                  }
-                  chart.render();
-                }
-              }
+                var label_date = human_date + ' ' + hours + ':' + minutes;
+		        labels.push(label_date);
+		    }
+		    var chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: dataPoints,
+                        label: probe,
+                        borderColor: '#8e5ea2',
+                    }]
+                },
+                options: {
+                    title: {
+                        display: true,
+                        text: 'Temperature over time for probe: ' + probe
+                    }
+                },
             });
-            chart.render();
         }
-        // Add in initial cart rendering
-        newChart(dataPoints1);
+
+        for (probe in temp_readings) {
+            var data = [];
+            console.log(temp_readings[probe]);
+            for (var i = 0; i < temp_readings[probe].length; i++) {
+                data.push({x: new Date(temp_readings[probe][i].timestamp), y: temp_readings[probe][i].temperature});
+            }
+
+            // dataPoints
+            var dataPoints1 = data;
+
+            // Add in initial cart rendering
+            newChart(dataPoints1, probe);
+        }
 
 		var updateInterval = 10000;
 
 		var updateChart = function () {
-            $.ajax({
-                type: "GET",
-                url: '/get/temp_data/',
-                data: {"brew": {{current_brew.id}}, "brew_step": {{current_brew.current_brew_step.id}}},
-                success: function(response) {
-                    var dataPoints = [];
-                    for (var i = 0; i < response.data.length; i++) {
-                        dataPoints.push({x: new Date(response.data[i].x), y: response.data[i].y});
+            for (probe in temp_readings) {
+                $.ajax({
+                    type: "GET",
+                    url: '/get/temp_data/',
+                    data: {"brew": {{current_brew.id}}, "brew_step": {{current_brew.current_brew_step.id}},
+                            "probe": probe},
+                    success: function(response) {
+                        for (probe in response.data) {
+                            var dataPoints = [];
+                            for (var j = 0; j < response.data[probe].length; j++) {
+                                dataPoints.push({x: new Date(response.data[probe][j].x), y: response.data[probe][j].y});
+                            }
+                            newChart(dataPoints, probe);
+                        }
+                    },
+                    error: function(error) {
+                        console.log(error);
                     }
-                    newChart(dataPoints);
-                },
-                error: function(error) {
-                    console.log(error);
-                }
-            });
-
-
-
+                });
+            }
 		};
 
 		// update chart after specified interval
 		setInterval(function(){updateChart()}, updateInterval);
 	});
 	</script>
-</body>
-</html>
+{% endblock %}

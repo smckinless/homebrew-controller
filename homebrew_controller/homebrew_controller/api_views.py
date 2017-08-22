@@ -55,12 +55,22 @@ class GetAllTempData(APIView):
         brew_step = request.GET.get('brew_step')
         #TODO: Filter by probe if probe is passed in
         probe = request.GET.get('probe')
-        temp_readings = TempReading.objects.filter(brew=brew, brew_step=brew_step)
+        if probe:
+            try:
+                probe = Probe.objects.get(id=probe)
+            except Probe.DoesNotExist:
+                return Response({'error': 'Invalid probe id'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            temp_readings = TempReading.objects.filter(brew=brew, brew_step=brew_step, probe=probe)
+        else:
+            #temp_readings = TempReading.objects.filter(brew=brew, brew_step=brew_step)
+            return Response({'error': 'No probe specified'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        data = {}
         temp_readings_list = []
         for temp_reading in temp_readings:
             temp_readings_list.append({'x': temp_reading.timestamp.isoformat(),
                                        'y': temp_reading.temperature})
-        return Response({'data': temp_readings_list}, status=status.HTTP_200_OK)
+        data[probe.id] = temp_readings_list
+        return Response({'data': data}, status=status.HTTP_200_OK)
 
 class SetCurrentBrewStep(APIView):
     """
