@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+{% block head %}
+<head>
+
+    <meta charset="UTF-8">
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.js"></script>
+    <link rel="stylesheet" type="text/css" href="{% static 'bootstrap/css/bootstrap.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static '/css/master.css' %}">
+    <script src="{% static 'bootstrap/js/bootstrap.js' %}"></script>
+</head>
+{% endblock %}
+<body>
+<nav class="navbar navbar-default">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="#">
+        <!--<img alt="BrewController" src="">-->
+          BrewController
+      </a>
+    </div>
+      <div class="navbar-right dropdown">
+          <a class="dropdown-toggle" data-toggle="dropdown">
+            <span class ="glyphicon glyphicon-menu-hamburger"></span>
+          </a>
+          <ul class="dropdown-menu">
+            <li><a href="#">Action</a></li>
+          </ul>
+      </div>
+  </div>
+</nav>
+{% block content %}
+{% endblock %}
+</body>
+</html>
