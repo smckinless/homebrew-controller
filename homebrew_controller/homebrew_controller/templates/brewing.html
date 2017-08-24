@@ -20,39 +20,44 @@
 
         var temp_readings = {{temp_readings|safe}};
 
+        var probe_to_chart = {};
+
 
         // Create new chart with given data points for chart
 		function newChart(dataPoints, probe) {
-		    var ctx = document.getElementById("chartContainer-" + probe).getContext('2d');
-		    var labels = [];
-		    for (var i = 0; i < dataPoints.length; i++) {
-                var date = dataPoints[i].x;
-                var human_date = date.toDateString();
-                var hours = date.getHours();
-                var minutes = date.getMinutes();
-                if (minutes.toString().length < 2) {
-                    minutes = '0' + minutes;
-                }
-                var label_date = human_date + ' ' + hours + ':' + minutes;
-		        labels.push(label_date);
-		    }
-		    var chart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: dataPoints,
-                        label: probe,
-                        borderColor: '#8e5ea2',
-                    }]
-                },
-                options: {
-                    title: {
-                        display: true,
-                        text: 'Temperature over time for probe: ' + probe
+		    if (dataPoints.length > 0) {
+                var ctx = document.getElementById("chartContainer-" + probe).getContext('2d');
+                var labels = [];
+                for (var i = 0; i < dataPoints.length; i++) {
+                    var date = dataPoints[i].x;
+                    var human_date = date.toDateString();
+                    var hours = date.getHours();
+                    var minutes = date.getMinutes();
+                    if (minutes.toString().length < 2) {
+                        minutes = '0' + minutes;
                     }
-                },
-            });
+                    var label_date = human_date + ' ' + hours + ':' + minutes;
+                    labels.push(label_date);
+                }
+                var chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: dataPoints,
+                            label: probe,
+                            borderColor: '#8e5ea2',
+                        }]
+                    },
+                    options: {
+                        title: {
+                            display: true,
+                            text: 'Temperature over time for probe: ' + probe
+                        }
+                    },
+                });
+                probe_to_chart[probe] = chart;
+            }
         }
 
         for (probe in temp_readings) {
@@ -71,6 +76,26 @@
 
 		var updateInterval = 10000;
 
+		function updateData(chart, dataPoints) {
+		    if (chart) {
+		        var labels = [];
+		        for (var i = 0; i < dataPoints.length; i++) {
+                    var date = dataPoints[i].x;
+                    var human_date = date.toDateString();
+                    var hours = date.getHours();
+                    var minutes = date.getMinutes();
+                    if (minutes.toString().length < 2) {
+                        minutes = '0' + minutes;
+                    }
+                    var label_date = human_date + ' ' + hours + ':' + minutes;
+                    labels.push(label_date);
+                }
+
+		        chart.data.labels = labels;
+		        chart.data.datasets[0] = dataPoints;
+		    }
+		}
+
 		var updateChart = function () {
             for (probe in temp_readings) {
                 $.ajax({
@@ -84,7 +109,9 @@
                             for (var j = 0; j < response.data[probe].length; j++) {
                                 dataPoints.push({x: new Date(response.data[probe][j].x), y: response.data[probe][j].y});
                             }
-                            newChart(dataPoints, probe);
+                            var chart = probe_to_chart[probe];
+                            console.log(chart);
+                            updateData(chart, dataPoints);
                         }
                     },
                     error: function(error) {
