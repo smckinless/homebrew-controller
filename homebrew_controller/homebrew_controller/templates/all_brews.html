@@ -1,0 +1,7 @@
+{% extends 'master.html' %}
+
+{% block content %}
+{% for brew in brews %}
+{{ brew.name }}
+{% endfor %}
+{% endblock %}

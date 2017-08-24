@@ -16,7 +16,7 @@ Including another URLconf
 from django.conf.urls import url, include
 from django.contrib import admin
 from api_views import TempData, SetCurrentBrewStep, GetAllBrewsAPI, GetAllTempData
-from views import IndexView, BrewingView
+from views import IndexView, BrewingView, AllBrewsView, BrewView
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
@@ -27,4 +27,6 @@ urlpatterns = [
     url(r'^brew/$', BrewingView.as_view()),
     url(r'^get/all/brews/$', GetAllBrewsAPI.as_view()),
     url(r'^get/temp_data/$', GetAllTempData.as_view()),
+    url(r'^all_brews/$', AllBrewsView.as_view()),
+    url(r'^brew/(?P<brew_id>[0-9])/$', BrewView.as_view())
 ]
