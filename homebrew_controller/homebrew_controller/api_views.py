@@ -102,3 +102,19 @@ class GetAllBrewsAPI(APIView):
         all_brews = Brew.objects.filter(is_active=False)
         context = {'brews': all_brews}
         return Response(context, status=status.HTTP_200_OK)
+
+
+class SetBrewStatus(APIView):
+    """
+    Sets the current brew to inactive/active if there is one.
+    """
+    def post(self, request):
+        brew = request.data['brew']
+        is_active = request.data['is_active']
+        if brew is not None and is_active is not None:
+            brew = Brew.objects.get(id=brew)
+            brew.is_active = is_active
+            brew.save()
+            return Response({'data': 'Brew set to inactive'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Brew id and/or is_active not added to request'}, status=status.HTTP_400_BAD_REQUEST)
