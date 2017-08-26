@@ -1,11 +1,36 @@
 {% extends 'master.html' %}
 {% block head %}
-{{ block.super }}
+    <script type="text/javascript">
+        var brew = {{ current_brew.id }}
+    </script>
+    {{ block.super }}
     <title>{{ current_brew }} Dashboard</title>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.6.0/Chart.js"></script>
+    <script type="text/javascript" src="/static/js/brewing.js"></script>
+
 {% endblock %}
 {% block content %}
 <div>This is the current step in the brewing process: {{ current_brew.current_brew_step.name }}.</div>
+<div>
+    {% if current_brew.is_active %}
+        <button class="button pause">Pause</button>
+        <button class="button start" hidden="true">Start</button>
+    {% else %}
+        <button class="button pause" hidden="true">Pause</button>
+        <button class="button start">Start</button>
+    {% endif %}
+    <button class="button next">Next Step</button>
+</div>
+<div class="step-list" hidden="true">
+    <form class="step-form">
+        {% csrf_token %}
+        <select name="step_name">
+
+        </select>
+        <input class="button submit-step" type="submit">
+    </form>
+
+</div>
 {% for probe in probes %}
 <canvas id="chartContainer-{{probe.id}}" style="height: 300px; width: 100%;">
 	</canvas>

@@ -15,7 +15,7 @@ Including another URLconf
 """
 from django.conf.urls import url, include
 from django.contrib import admin
-from api_views import TempData, SetCurrentBrewStep, GetAllBrewsAPI, GetAllTempData
+from api_views import TempData, SetCurrentBrewStep, GetAllBrewsAPI, GetAllTempData, SetBrewStatus
 from views import IndexView, BrewingView, AllBrewsView, BrewView
 
 urlpatterns = [
@@ -28,5 +28,6 @@ urlpatterns = [
     url(r'^get/all/brews/$', GetAllBrewsAPI.as_view()),
     url(r'^get/temp_data/$', GetAllTempData.as_view()),
     url(r'^all_brews/$', AllBrewsView.as_view()),
-    url(r'^brew/(?P<brew_id>[0-9])/$', BrewView.as_view())
+    url(r'^brew/(?P<brew_id>[0-9])/$', BrewView.as_view()),
+    url(r'^brew/set_status/$', SetBrewStatus.as_view()),
 ]

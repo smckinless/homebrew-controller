@@ -1,100 +1,100 @@
 $(document).ready(function () {
-    // create date from years, hours, minutes, seconds passed in
-    function newDateString(year, month, hours, minutes, seconds) {
-        return new Date(year, month, hours, minutes, seconds);
-    }
-
-    var temp_readings = {{temp_readings|safe}};
-
-    // Create new chart with given data points for chart
-    function newChart(dataPoints, probe) {
-        var chart = new CanvasJS.Chart("chartContainer-" + probe,{
-            zoomEnabled: true,
-            title: {
-                text: "Temperature Over Time for " + "{{current_brew.current_brew_step.name}}"
-            },
-            toolTip: {
-                shared: true
-
-            },
-            legend: {
-                verticalAlign: "top",
-                horizontalAlign: "center",
-                                fontSize: 14,
-                fontWeight: "bold",
-                fontFamily: "calibri",
-                fontColor: "dimGrey"
-            },
-            axisX: {
-                title: "chart updates every 10 secs"
-            },
-            axisY:{
-                suffix: '°',
-                includeZero: false
-            },
-            data: [{
-                // dataSeries1
-                type: "line",
-                showInLegend: true,
-                name: "Temperature over Time",
-                dataPoints: dataPoints
-            }
-            ],
-          legend:{
-            cursor:"pointer",
-            itemclick : function(e) {
-              if (typeof(e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
-                e.dataSeries.visible = false;
-              }
-              else {
-                e.dataSeries.visible = true;
-              }
-              chart.render();
-            }
-          }
-        });
-        chart.render();
-    }
-
-    for (probe in temp_readings) {
-        var data = [];
-        console.log(temp_readings[probe]);
-        for (var i = 0; i < temp_readings[probe].length; i++) {
-            data.push({x: new Date(temp_readings[probe][i].timestamp), y: temp_readings[probe][i].temperature});
-        }
-
-        // dataPoints
-        var dataPoints1 = data;
-
-        // Add in initial cart rendering
-        newChart(dataPoints1, probe);
-    }
-
-    var updateInterval = 10000;
-
-    var updateChart = function () {
-        for (probe in temp_readings) {
-            $.ajax({
-                type: "GET",
-                url: '/get/temp_data/',
-                data: {"brew": {{current_brew.id}}, "brew_step": {{current_brew.current_brew_step.id}},
-                        "probe": probe},
-                success: function(response) {
-                    for (probe in response.data) {
-                        var dataPoints = [];
-                        for (var j = 0; j < response.data[probe].length; j++) {
-                            dataPoints.push({x: new Date(response.data[probe][j].x), y: response.data[probe][j].y});
-                        }
-                        newChart(dataPoints, probe);
-                    }
-                },
-                error: function(error) {
-                    console.log(error);
+    // using jQuery
+    function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = jQuery.trim(cookies[i]);
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
                 }
-            });
+            }
         }
-    };
+        return cookieValue;
+    }
+    var csrftoken = getCookie('csrftoken');
 
-    // update chart after specified interval
-    setInterval(function(){updateChart()}, updateInterval);
+    //Ajax call
+    function csrfSafeMethod(method) {
+        // these HTTP methods do not require CSRF protection
+        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+    }
+
+    $.ajaxSetup({
+        crossDomain: false, // obviates need for sameOrigin test
+        beforeSend: function(xhr, settings) {
+            if (!csrfSafeMethod(settings.type)) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+            }
+        }
+    });
+
+    $('.next').click(function() {
+        var select = $('.step-list form').find('select');
+        $.ajax({
+            type: 'GET',
+            url: '/set_step/',
+            success: function(data) {
+                var brew_steps = data['data'];
+                for(var i = 0; i < brew_steps.length; i++) {
+                    select.append($("<option></option>")
+                                        .attr("step_name", brew_steps[i].name)
+                                        .text(brew_steps[i].name));
+                };
+                $('.step-list').prop('hidden', '');
+            },
+            error: function(error) {
+                console.log(error);
+            }
+        });
+    });
+
+    $('.submit-step').click(function() {
+        var data = $('.step-form').serialize();
+        alert(data);
+        $.ajax({
+            type: 'POST',
+            url: '/set_step/',
+            data: data,
+            success: function(data) {
+                location.reload();
+            },
+            error: function(error) {
+                console.log(error);
+            }
+        });
+    });
+
+    $('.pause').click(function() {
+        $.ajax({
+            type: 'POST',
+            url: '/brew/set_status/',
+            data: {'brew': brew, 'is_active': 0},
+            success: function(data) {
+                $('.pause').prop('hidden', 'true');
+                $('.start').prop('hidden', '');
+            },
+            error: function(error) {
+                console.log(error);
+            }
+        });
+    });
+
+    $('.play').click(function() {
+        $.ajax({
+            type: 'POST',
+            url: '/brew/set_status/',
+            data: {'brew': brew, 'is_active': 1},
+            success: function(data) {
+                $('.start').prop('hidden', 'true');
+                $('.pause').prop('hidden', '');
+            },
+            error: function(error) {
+                console.log(error);
+            }
+        });
+    });
 });

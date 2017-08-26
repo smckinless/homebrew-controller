@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.core.exceptions import MultipleObjectsReturned
+from django.forms.models import model_to_dict
 
 from homebrew_controller.models import Brew, Probe, TempReading, BrewStep
 
@@ -72,10 +73,27 @@ class GetAllTempData(APIView):
         data[probe.id] = temp_readings_list
         return Response({'data': data}, status=status.HTTP_200_OK)
 
+
 class SetCurrentBrewStep(APIView):
     """
     Sets the given brew step as the current brew step for the active brew.
     """
+
+    def get(self, request):
+        try:
+            current_brew = Brew.objects.get(is_active=True)
+        except Brew.DoesNotExist:
+            return Response({'error': 'There are no active brews.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        current_step = current_brew.current_brew_step
+        brew_steps = BrewStep.objects.exclude(name=current_step.name)
+        serialized_brew_steps = []
+        for brew in brew_steps:
+            brew = model_to_dict(brew)
+            serialized_brew_steps.append(brew)
+        if brew_steps:
+            return Response({'data': serialized_brew_steps}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'There are no remaining brew steps'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def post(self, request):
         step_name = request.data['step_name']
@@ -89,9 +107,9 @@ class SetCurrentBrewStep(APIView):
             return Response({'error': 'This is not a brew step.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except MultipleObjectsReturned:
             return Response({'error': 'Multiple instances of this brew step exist'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        current_brew.update(current_brew_step=step)
-        return Response({'data': 'Fermentation step %s added to brew.' % step.name}, status=status.HTTP_200_OK)
+        current_brew.current_brew_step = step
+        current_brew.save()
+        return Response({'data': 'Brewing step %s added to brew.' % step.name}, status=status.HTTP_200_OK)
 
 
 class GetAllBrewsAPI(APIView):
