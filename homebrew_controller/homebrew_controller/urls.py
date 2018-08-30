@@ -15,19 +15,26 @@ Including another URLconf
 """
 from django.conf.urls import url, include
 from django.contrib import admin
-from api_views import TempData, SetCurrentBrewStep, GetAllBrewsAPI, GetAllTempData, SetBrewStatus
+from api_views import CreateTempReadingAPI, CreateBrewStepAPI, CreateProbeAPI, SetCurrentBrewStep, GetAllBrewsAPI, SetBrewStatus, TempReadingsForMashStep, TempReadingsForBoilStep, TempReadingsForFermentationStep, CreateBrewAPI, GetBrewAPI
 from views import IndexView, BrewingView, AllBrewsView, BrewView
 
 urlpatterns = [
+    url(r'^', include('frontend.urls', namespace='frontend')),
     url(r'^admin/', admin.site.urls),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
-    url(r'^temp_data/$', TempData.as_view()),
-    url(r'^$', IndexView.as_view()),
+    url(r'^temp_data/$', CreateTempReadingAPI.as_view()),
+    # url(r'^$', IndexView.as_view()),
     url(r'^set_step/$', SetCurrentBrewStep.as_view()),
     url(r'^brew/$', BrewingView.as_view()),
     url(r'^get/all/brews/$', GetAllBrewsAPI.as_view()),
-    url(r'^get/temp_data/$', GetAllTempData.as_view()),
     url(r'^all_brews/$', AllBrewsView.as_view()),
     url(r'^brew/(?P<brew_id>[0-9])/$', BrewView.as_view()),
+    url(r'^api/brew/(?P<id>[0-9])/$', GetBrewAPI.as_view()),
     url(r'^brew/set_status/$', SetBrewStatus.as_view()),
+    url(r'^api/brew/(?P<brew_id>[0-9])/mash/$', TempReadingsForMashStep.as_view()),
+    url(r'^api/brew/(?P<brew_id>[0-9])/boil/$', TempReadingsForBoilStep.as_view()),
+    url(r'^api/brew/(?P<brew_id>[0-9])/fermentation/$', TempReadingsForFermentationStep.as_view()),
+    url(r'^brew/create/$', CreateBrewAPI.as_view()),
+    url(r'^probe/create/$', CreateProbeAPI.as_view()),
+    url(r'^brew-step/create/$', CreateBrewStepAPI.as_view()),
 ]

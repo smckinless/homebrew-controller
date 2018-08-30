@@ -10,7 +10,7 @@
 
 {% endblock %}
 {% block content %}
-<div>This is the current step in the brewing process: {{ current_brew.current_brew_step.name }}.</div>
+<!--<div>This is the current step in the brewing process: {{ current_brew.current_brew_step.name }}.</div>-->
 <div>
     {% if current_brew.is_active %}
         <button class="button pause">Pause</button>
@@ -78,6 +78,14 @@
                         title: {
                             display: true,
                             text: 'Temperature over time for probe: ' + probe
+                        },
+                        scales: {
+                            yAxes: [{
+                                scaleLabel: {
+                                    display: true,
+                                    labelString: 'Temperature (°C)'
+                                }
+                            }]
                         }
                     },
                 });
